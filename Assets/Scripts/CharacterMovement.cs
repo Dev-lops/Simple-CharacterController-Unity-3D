@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Cinemachine;
 [RequireComponent(typeof(CharacterController))]
 public class CharacterMovement : MonoBehaviour
 {
@@ -11,8 +12,11 @@ public class CharacterMovement : MonoBehaviour
     private float gravityValue;
     private Vector3 playerVelocity;
     [SerializeField] private float fallMultiplier = 2.5f, lowJumpMultiplier = 2.0f;
-    private Vector3 head,feet;
+    private Vector3 head,feet, velocity;
     [SerializeField] private LayerMask rayCollision;
+    [SerializeField] private Transform cam;
+    [SerializeField] private float smoothCamMovement = 3,smoothCamRotation;
+    private float mouseX,mouseY;
     private void Awake() {
         character = GetComponent<CharacterController>();
         input = InputManager.inst;
@@ -35,14 +39,15 @@ public class CharacterMovement : MonoBehaviour
         feet = transform.position;
         feet.y -= transform.localScale.y;
 
-        CameraRotation();
         Jump();
         Movement();
+    }
+    private void LateUpdate() {
+        Cam();
     }
     private void FixedUpdate() {
         //Applying Forces
         character.Move(transform.TransformVector(playerVelocity) * Time.fixedDeltaTime);
-
         Gravity();
     }
     private void Gravity(){
@@ -74,11 +79,24 @@ public class CharacterMovement : MonoBehaviour
             playerVelocity.y += Mathf.Sqrt(jumpForce * -3.0f * gravityValue);
         }
     }
-    private void CameraRotation(){
-        Quaternion cameraRotation =  transform.rotation;
-        cameraRotation.y = Camera.main.transform.rotation.y;
-        cameraRotation.w = Camera.main.transform.rotation.w;
-        transform.rotation = cameraRotation;
+    private void Cam(){
+        //Smooth Camera Follow POV
+        Vector3 pov = transform.GetChild(0).position;
+        Vector3 smoothPosition = Vector3.SmoothDamp(cam.position,pov,ref velocity,smoothCamMovement * Time.deltaTime);
+        cam.position = smoothPosition;
+        
+        //Smooth Camera Rotation
+        mouseX += input.MouseDeltaInput().x * manager.mouseSensiblity * Time.deltaTime;
+        mouseY += input.MouseDeltaInput().y * manager.mouseSensiblity * Time.deltaTime;
+        mouseY = Mathf.Clamp(mouseY,-90,90);
+        Quaternion desiredRotation = Quaternion.Euler(-mouseY,mouseX,0);
+        Quaternion smoothRotation = Quaternion.Slerp(cam.rotation, desiredRotation ,smoothCamRotation * Time.deltaTime);
+        cam.rotation = smoothRotation;
+        
+        Quaternion camRotation = transform.rotation;
+        camRotation.y = cam.rotation.y;
+        camRotation.w = cam.rotation.w;
+        transform.rotation = camRotation;
 
     }
     private bool hitHead(){
