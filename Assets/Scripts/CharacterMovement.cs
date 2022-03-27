@@ -85,8 +85,8 @@ public class CharacterMovement : MonoBehaviour
         cam.position = smoothPosition;
         
         //Smooth Camera Rotation
-        mouseX += input.MouseDeltaInput().x * manager.mouseSensiblity * Time.deltaTime;
-        mouseY += input.MouseDeltaInput().y * manager.mouseSensiblity * Time.deltaTime;
+        mouseX += input.MouseDeltaInput().x * manager.mouseSensiblity * 0.5f *  Time.fixedDeltaTime;
+        mouseY += input.MouseDeltaInput().y * manager.mouseSensiblity * 0.5f * Time.fixedDeltaTime;
         mouseY = Mathf.Clamp(mouseY,-90,90);
         Quaternion desiredRotation = Quaternion.Euler(-mouseY,mouseX,0);
         Quaternion smoothRotation = Quaternion.Slerp(cam.rotation, desiredRotation ,smoothCamRotation * Time.deltaTime);
