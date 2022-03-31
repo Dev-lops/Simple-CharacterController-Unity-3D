@@ -1,7 +1,7 @@
 # Simple-CharacterController-Unity-3D
-Simple CharacterController with the new Input System and Cinemachine
+Simple CharacterController with the new Input System.
 
-Install Input System and Cinemachine. Add the files to your project.
+Install Input System and add the files to your project.
 
 Refs:
 
