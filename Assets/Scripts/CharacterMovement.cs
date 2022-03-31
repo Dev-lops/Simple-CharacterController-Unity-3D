@@ -8,14 +8,15 @@ public class CharacterMovement : MonoBehaviour
     private InputManager input;
     private GameManager manager;
     [SerializeField] private float walkSpeed = 5, runSpeed = 10, jumpForce = 2;
-    private float gravityValue;
+    private float gravityValue,jumpingSpeed;
     private Vector3 playerVelocity;
     [SerializeField] private float fallMultiplier = 2.5f, lowJumpMultiplier = 2.0f;
     private Vector3 head,feet, velocity;
     [SerializeField] private LayerMask rayCollision;
-    [SerializeField] private Transform cam;
+    public Transform cam;
     [SerializeField] private float smoothCamMovement = 3,smoothCamRotation;
     private float mouseX,mouseY;
+    private bool runningjump = false;
     private void Awake() {
         character = GetComponent<CharacterController>();
         input = InputManager.inst;
@@ -25,8 +26,11 @@ public class CharacterMovement : MonoBehaviour
     void Start()
     {
         gravityValue = Physics.gravity.y;
+
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
+
+        jumpingSpeed = runSpeed;
     }
 
     // Update is called once per frame
@@ -34,9 +38,9 @@ public class CharacterMovement : MonoBehaviour
     {
         //Get Top and Bottom Position
         head = transform.position;
-        head.y += transform.localScale.y;
+        head.y += transform.localScale.y - 0.4f;
         feet = transform.position;
-        feet.y -= transform.localScale.y;
+        feet.y -= transform.localScale.y - 0.4f;
 
         Jump();
         Movement();
@@ -68,14 +72,24 @@ public class CharacterMovement : MonoBehaviour
         //Right and Left Movement
         playerVelocity.x = input.MovementInput().x * walkSpeed;
         //Forward and Back Movement
-        if(input.RunInput() && playerVelocity.z > 0){
+        if(input.RunInput() && playerVelocity.z > 0 && isGrounded()){
             playerVelocity.z = input.MovementInput().z * runSpeed;
+        }else if(playerVelocity.z > 0 && runningjump){
+            playerVelocity.z = input.MovementInput().z * jumpingSpeed;
+            jumpingSpeed -= 0.5f * Time.fixedDeltaTime;
         }
         else playerVelocity.z = input.MovementInput().z * walkSpeed;
     }
     private void Jump(){
         if(input.JumpInput() && isGrounded()){
             playerVelocity.y += Mathf.Sqrt(jumpForce * -3.0f * gravityValue);
+        }
+        if((input.RunInput() && playerVelocity.z > 0 && isGrounded() && (input.JumpInput() || input.JumpPressed()))){
+            runningjump = true;
+        }
+        else if(isGrounded()){
+            runningjump = false;
+            jumpingSpeed = runSpeed;
         }
     }
     private void Cam(){
@@ -99,9 +113,13 @@ public class CharacterMovement : MonoBehaviour
 
     }
     private bool hitHead(){
-        return Physics.Raycast(head,transform.up,0.1f,rayCollision);
+        return Physics.CheckSphere(head,0.5f,rayCollision);
     }
     private bool isGrounded(){
-        return Physics.Raycast(feet,-transform.up,0.1f,rayCollision);
+        return Physics.CheckSphere(feet,0.5f,rayCollision);
+    }
+    private void OnDrawGizmos() {
+        Gizmos.color = Color.blue;
+        Gizmos.DrawSphere(feet,0.5f);
     }
 }
